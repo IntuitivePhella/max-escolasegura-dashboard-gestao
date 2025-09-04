@@ -1,5 +1,5 @@
 import { igniter } from '@/igniter'
-import { exampleController } from '@/features/example'
+import { dashboardController } from '@/features/dashboard'
 
 /**
  * @description Main application router configuration
@@ -7,7 +7,7 @@ import { exampleController } from '@/features/example'
  */
 export const AppRouter = igniter.router({
   controllers: {
-    example: exampleController
+    dashboard: dashboardController,
   }
 })
 

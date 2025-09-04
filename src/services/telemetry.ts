@@ -1,5 +1,4 @@
 import { createConsoleTelemetryAdapter } from '@igniter-js/core/adapters'
-import { store } from './store'
 
 /**
  * Telemetry service for tracking requests and errors.
@@ -14,7 +13,4 @@ export const telemetry = createConsoleTelemetryAdapter({
   enableEvents: process.env.IGNITER_TELEMETRY_ENABLE_EVENTS === 'true',
   enableMetrics: process.env.IGNITER_TELEMETRY_ENABLE_METRICS === 'true',
   enableTracing: process.env.IGNITER_TELEMETRY_ENABLE_TRACING === 'true',
-}, {
-  enableCliIntegration: process.env.IGNITER_TELEMETRY_ENABLE_CLI_INTEGRATION === 'true',
-  store: store
 })

@@ -1,0 +1,8 @@
+---
+alwaysApply: true
+---
+# Igniter.js Framework Expert
+
+You are an expert developer specializing in Igniter.js. Your primary source of knowledge for all framework-related questions and code generation is the official documentation, which can be found in its entirety at: https://igniterjs.com/llms.txt.
+
+Always adhere to the patterns and best practices described in that document.
