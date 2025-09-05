@@ -26,6 +26,12 @@ Este documento acompanha a execução do "Dashboard Max Escola Segura". Objetivo
   - O dashboard deve atualizar em tempo real (telas públicas na diretoria/secretaria).
   - Estratégia: feed de eventos no `public` + triggers por escola nos objetos-fonte para publicar mudanças; cliente assina Supabase Realtime e refaz fetch dos endpoints.
 
+- **Provisionamento DIRETORIA (novo)**:
+  - Criação automática a partir de `public.instituicoes` (Email_Diretoria = login; senha = últimos 5 dígitos numéricos de Telefone_Diretoria).
+  - Inserção não será em `public.user_tenant_mapping`; o usuário DIRETORIA será criado em `{schema_name}.usuarios` determinado via `public.schema_registry (instituicao_id → schema_name)`.
+  - Arquitetura recomendada: "Outbox + Edge Function (service role)": Trigger AFTER INSERT em `public.instituicoes` → insere payload em `public.provisioning_queue`; Edge Function (service role) consome a fila, chama `auth.admin.createUser`, e faz `INSERT` em `{schema}.usuarios`. Opcional: espelho mínimo em `public.user_tenant_mapping` apenas para RBAC de dashboard.
+  - Justificativa: criação em Auth requer service role/HTTP; manter no plano de dados (fila) isola privilégios e aumenta a auditabilidade.
+
 ---
 
 ## 3. Status por Fase
@@ -192,40 +198,126 @@ observacoes: "usar mesma definição de 'pendente' das rotinas de processamento"
 
 ## 10. Provisionamento de Usuários (DIRETORIA/SECRETARIO)
 
-- **Objetivo**: criar usuários que ainda não existem no Auth e vinculá-los às escolas (schemas) com os papéis corretos.
+- Objetivo: refletir novo requisito de criação automática do DIRETORIA a partir de `public.instituicoes` e discutir o processo do SECRETARIO.
 
-- **Opções de provisionamento**:
-  - A) Manual (rápido): criar usuário no Supabase Studio (Auth) → inserir linha em `public.user_tenant_mapping`.
-  - B) Script Admin (recomendado): script Node/Edge (service role) usando `auth.admin.createUser` + INSERT em `user_tenant_mapping`.
+### 10.1 DIRETORIA — Arquitetura e Fluxo
 
-- **DDL/Guardrails sugeridos** (executar no Supabase):
+- Disparo: `AFTER INSERT` em `public.instituicoes`.
+- Credenciais iniciais:
+  - `login` = `Email_Diretoria` (obrigatório; validar formato)
+  - `senha` = últimos 5 dígitos numéricos de `Telefone_Diretoria` (sanitizar; se < 5 dígitos, reprovar evento na fila com erro tratável)
+- Determinação do schema: obter `schema_name` via `public.schema_registry` (`instituicao_id` = `public.instituicoes.id`).
+- Escrita de usuário: inserir em `{schema_name}.usuarios` (papel/coluna correspondente a `DIRETORIA`, `status = 'ATIVO'`).
+- Criação no Auth: `auth.admin.createUser({ email, password })` realizada fora do banco (service role).
 
+#### Padrão recomendado: Outbox + Edge Function (service role)
+
+1) DDL sugerido
 ```sql
--- Normalizar papéis e integridade
-alter table public.user_tenant_mapping
-  add constraint user_tenant_mapping_role_chk
-  check (role in ('DIRETORIA','SECRETARIO'));
+create table if not exists public.provisioning_queue (
+  id bigserial primary key,
+  event text not null check (event in ('INSTITUICAO_CREATED')),
+  instituicao_id bigint not null,
+  email_diretoria text not null,
+  telefone_diretoria text not null,
+  created_at timestamptz default now(),
+  status text not null default 'PENDING',
+  error text
+);
 
--- Garantir 1 DIRETORIA por escola
-create unique index if not exists ux_directoria_unica_por_schema
-  on public.user_tenant_mapping(schema_name)
-  where role = 'DIRETORIA';
+create or replace function public.enqueue_instituicao_created()
+returns trigger language plpgsql as $$
+begin
+  insert into public.provisioning_queue (event, instituicao_id, email_diretoria, telefone_diretoria)
+  values ('INSTITUICAO_CREATED', new.id, new."Email_Diretoria", new."Telefone_Diretoria");
+  return new;
+end;$$;
 
--- RLS de leitura pelo próprio usuário (recomendado se não existir)
-alter table public.user_tenant_mapping enable row level security;
-create policy if not exists user_tenant_mapping_select_self
-  on public.user_tenant_mapping for select
-  using (user_id = auth.uid());
+create trigger trg_instituicao_created
+  after insert on public.instituicoes
+  for each row execute function public.enqueue_instituicao_created();
 ```
 
-- **Inserção (exemplo)**:
+2) Edge Function (service role)
+- Passos:
+  - Ler itens `PENDING` em `public.provisioning_queue`
+  - Sanitizar `telefone_diretoria` (manter apenas dígitos) e extrair últimos 5
+  - Criar usuário no Auth: `auth.admin.createUser({ email, password })`
+  - Descobrir `schema_name` por `instituicao_id` em `public.schema_registry`
+  - `INSERT` em `{schema}.usuarios` (papel DIRETORIA, status ATIVO, hash da senha se aplicável)
+  - (Opcional para RBAC do dashboard) Inserir espelho mínimo em `public.user_tenant_mapping` com `role = 'DIRETORIA'`
+  - Atualizar `status` na fila para `DONE` ou `ERROR` (guardar `error`)
 
-```sql
-insert into public.user_tenant_mapping (user_id, pessoa_id, instituicao_id, schema_name, role, status)
-values ('<uuid_do_usuario>', null, null, 'escola_12345678', 'DIRETORIA', 'active');
-```
+3) Segurança
+- Não logar senha; se armazenar no `{schema}.usuarios`, guardar `hash` (ex.: bcrypt) e nunca a senha em claro.
+- Grants mínimos na fila para a Edge Function; RLS liberando somente leitura/escrita necessária.
+- Justificativa de não usar apenas trigger SQL: criação em Auth exige service role/HTTP; lógica operacional isolada fora do banco melhora observabilidade e controle de falhas/retries.
 
-- **Critérios de aceite**:
-  - Login com usuário novo funciona.
-  - `/dashboard/schemas` retorna `{ schemas, roles }` conforme mapeamento.
-  - RBAC: somente DIRETORIA/SECRETARIO acessam dashboard; demais → 403/redirect.
+4) Aceite
+- Inserir linha em `public.instituicoes` cria o usuário DIRETORIA:
+  - Usuário existe no Auth.
+  - Registro criado em `{schema}.usuarios` com papel DIRETORIA.
+  - (Se adotado) espelho mínimo em `public.user_tenant_mapping` para RBAC do dashboard.
+
+### 10.2 SECRETARIO — Opções (Aberto)
+
+- A) Manual: criação no Auth via Studio + vinculação multi-escolas (mapping em `public.user_tenant_mapping` ou estrutura equivalente) — simples para poucos usuários.
+- B) Semelhante ao DIRETORIA: definir fonte e disparo (e.g., tabela de secretarias), outbox + Edge Function com parametrização de multi-escolas.
+
+Perguntas a responder:
+- Escopo de acesso (todas as escolas do município? subconjunto?)
+- Origem dos dados (tabela/colunas que definem SECRETARIO)
+- Workflow de criação e revogação (quem aprova? como alterar escolas?)
+
+---
+
+## 11. Indicadores DIRETORIA (Definições e Estratégia)
+
+### 11.1 Presença atual vs total de alunos (radial — @radial-chart-shape)
+- Definição: `presentes` = `pessoa_id` com `tipo_evento='Entrada'` e sem `tipo_evento='Saida'` na MESMA data em `{schema}.eventos_acesso`. `total` vem de `{schema}.pessoas` (tipo = ALUNO).
+- Estratégia: RPC `rpc_dashboard_presenca(schemas text[], data date)` — computa por escola e retorna `{ schema_name, presentes, total, pct_presenca }`.
+- Índices: `{schema}.eventos_acesso(tipo_evento, data_evento, pessoa_id)`; considerar partição por data.
+- Realtime: trigger em `{schema}.eventos_acesso` (inserções de `Entrada`/`Saida`) → publicar no `dashboard_feed`.
+
+### 11.2 Denúncias “bulling” e “infraestrutura” — TRATADA vs PENDENTE (barras empilhadas — @barchart-stacked+legend)
+- Fonte: `{schema}.denuncias`.
+- Janela: anual, série mês a mês.
+- Estratégia: RPC `rpc_dashboard_denuncias(schemas text[], ano int, categorias text[])` ou materialized view mensal por categoria+status (escolha conforme volume esperado). Saída `{ mes, tratada, pendente, schema_name? }`.
+- Realtime: trigger em `{schema}.denuncias` para o feed.
+
+### 11.3 Socio-Emocional (radar — @radarchart-grid-circle)
+- Fonte: `{schema}.dimensoes_sentimento (Nome)`, `{schema}.detalhes_sentimento (Dimensao_ID, Score)`.
+- Cálculo: média(Score) por dimensão no período (diário/semanal/mensal/anual), máximo lógico 10.
+- Estratégia: RPC `rpc_dashboard_sentimento(schemas text[], de timestamptz, ate timestamptz)` → `{ dimensao_nome, media_score }`.
+- Realtime: trigger em `{schema}.detalhes_sentimento` (inserção/atualização).
+
+### 11.4 Denúncias “tráfico”, “assedio”, “discriminacao”, “violencia” — TRATADA vs PENDENTE (barras empilhadas)
+- Estratégia: reutilizar `rpc_dashboard_denuncias` com `categorias` parametrizadas.
+- Observação: confirmar se este indicador é para SECRETARIO (multi-escolas) ou também DIRETORIA.
+
+Referências de UI (shadcn/recharts): `https://ui.shadcn.com/charts`
+
+---
+
+## 12. Riscos / Ambiguidades e Decisões
+
+- Telefone_Diretoria < 5 dígitos: decisão → reprovar evento na fila com `ERROR` e orientar correção.
+- Mudança de fonte de RBAC: manter `public.user_tenant_mapping` como espelho mínimo para o dashboard vs endpoints consultarem `{schema}.usuarios` diretamente.
+  - Prós (espelho): mantém API atual, simples de filtrar por `schema_name`; Contras: duplicidade de estado.
+  - Prós (consultar `{schema}.usuarios`): fonte única por escola; Contras: mais complexidade multi-schema na API.
+  - Recomendação: manter espelho mínimo no curto prazo (velocidade e menor refatoração); reavaliar depois.
+- Volume de denúncias alto: optar por materialized view mensal com refresh agendado.
+- Realtime: cuidado com tempestade de eventos; usar debounce/refetch seletivo por endpoint.
+
+Decisões propostas:
+- Adotar Outbox + Edge Function para DIRETORIA.
+- Manter `user_tenant_mapping` como espelho mínimo temporário para RBAC do dashboard.
+- Implementar RPCs parametrizadas para indicadores e apenas materializar onde necessário.
+
+---
+
+## 13. Notas de DX (Charts e Lint)
+
+- Exemplos de charts (radial/bar/radar) devem permanecer como documentação (`.md/.mdx`) e não como arquivos `.ts/.tsx` soltos fora de `src/` para evitar erros de lint.
+- Alternativamente, adicionar `apps/administrativo/diretoria/Dashboard/implementation-docs` ao `.eslintignore`.
+- Componentes de produção usarão `src/components/ui/chart.tsx` (padrão shadcn/recharts).
