@@ -282,17 +282,83 @@ supabase functions deploy export-dashboard-pdf
 ## 11. Pendências e Decisões Futuras
 
 ### 11.1 Provisionamento de Usuários
-**Status**: PENDENTE - A ser definido com a equipe
+**Status**: ✅ DEFINIDO - Criação Automatizada em Batch
 
-- Como criar usuários DIRETORIA?
-- Como criar usuários SECRETARIO?
-- Automatizar ou processo manual?
+**Estratégia Aprovada**:
+- Criação automatizada via RPC `provision_regional_users()`
+- Usuários SEC_EDUC_MUN: 1 por município com escolas municipais (~2.859)
+- Usuários SEC_EDUC_EST: 1 por estado (7 total)
+- Usuários SEC_SEG_PUB: 1 por estado (7 total)
+- Total estimado: ~2.873 usuários regionais
 
-Opções em consideração:
-1. Processo manual via admin panel
-2. Importação em batch via CSV
-3. Integração com sistema existente
-4. Self-service com aprovação
+**Regras de Negócio**:
+- Municípios sem escolas não geram usuário
+- Escolas federais (TP_DEPENDENCIA = 1) fora do escopo inicial
+- Comunicação com secretarias tratada externamente
+- Senhas temporárias seguras com troca obrigatória no primeiro login
+
+**Implementação Técnica**:
+- Tabela `public.regional_users` para controle e auditoria
+- Senhas temporárias com padrão seguro e complexo
+- Mapeamento automático no `user_tenant_mapping`
+- Chunking de 100 usuários por vez para evitar timeout
+- Progress tracking e rollback em caso de falha
+
+**Scripts SQL Implementados**:
+1. `regional_users_table.sql` - Tabela principal com constraints e RLS
+2. `regional_user_helpers.sql` - 5 funções auxiliares para provisionamento
+3. `provision_regional_users.sql` - RPC principal com chunking e validação
+4. `regional_users_triggers.sql` - 5 triggers para sincronização e auditoria
+5. `regional_users_indexes.sql` - 20+ índices otimizados + views monitoramento
+
+**Sequência de Implementação**:
+
+1. **Preparação do Ambiente**:
+   ```bash
+   # Executar scripts na ordem obrigatória
+   psql -f implementation-docs/RPCs/regional_users_table.sql
+   psql -f implementation-docs/RPCs/regional_user_helpers.sql
+   psql -f implementation-docs/RPCs/provision_regional_users.sql
+   psql -f implementation-docs/RPCs/regional_users_triggers.sql
+   psql -f implementation-docs/RPCs/regional_users_indexes.sql
+   ```
+
+2. **Validação em Desenvolvimento**:
+   ```sql
+   -- Teste dry-run (não persiste dados)
+   SELECT * FROM provision_regional_users(100, TRUE);
+   
+   -- Verificar resultado esperado:
+   -- total_expected: ~2873, total_success: ~2873, total_errors: 0
+   ```
+
+3. **Execução em Produção**:
+   ```sql
+   -- Provisionamento completo
+   SELECT * FROM provision_regional_users();
+   
+   -- Validar criação por role
+   SELECT role, COUNT(*) FROM regional_users GROUP BY role;
+   ```
+
+4. **Validação Pós-Deploy**:
+   ```sql
+   -- Verificar mapeamentos criados
+   SELECT ru.role, COUNT(utm.id) as escolas_mapeadas
+   FROM regional_users ru
+   LEFT JOIN user_tenant_mapping utm ON ru.auth_user_id = utm.user_id
+   GROUP BY ru.role;
+   
+   -- Monitorar performance
+   SELECT * FROM v_regional_users_index_usage;
+   ```
+
+**Critérios de Validação**:
+- ✅ Provisionamento: 100% usuários criados sem erro
+- ✅ Mapeamento: Escolas associadas corretamente por role
+- ✅ Performance: Execução completa em < 60 segundos
+- ✅ Segurança: RLS e validações funcionando
+- ✅ Auditoria: Logs de criação registrados em `regional_users_audit`
 
 ### 11.2 Funcionalidades Futuras
 - [ ] Export de relatórios (PDF/Excel)

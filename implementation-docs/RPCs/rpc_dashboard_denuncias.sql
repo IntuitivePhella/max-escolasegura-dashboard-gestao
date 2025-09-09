@@ -402,31 +402,31 @@ BEGIN
             CONTINUE;
         END IF;
         
-        v_sql := format($dynamic$
-            WITH totais AS (
+            v_sql := format($dynamic$
+                WITH totais AS (
+                    SELECT 
+                        "Categoria",
+                        "Status",
+                        COUNT(*) as quantidade,
+                        SUM(COUNT(*)) OVER (PARTITION BY "Categoria") as total_categoria
+                    FROM %I.denuncias
+                    WHERE "Categoria" = ANY(%L)
+                    GROUP BY "Categoria", "Status"
+                )
                 SELECT 
-                    "Categoria",
-                    "Status",
-                    COUNT(*) as quantidade,
-                    SUM(COUNT(*)) OVER (PARTITION BY "Categoria") as total_categoria
-                FROM %I.denuncias
-                WHERE "Categoria" = ANY(%L)
-                GROUP BY "Categoria", "Status"
-            )
-            SELECT 
-                %L as schema_name,
-                %L as escola_nome,
-                "Categoria" as categoria,
+                    %L as schema_name,
+                    %L as escola_nome,
+                    "Categoria" as categoria,
                 "Status"::VARCHAR as status,
-                quantidade,
-                ROUND((quantidade::NUMERIC / NULLIF(total_categoria, 0)) * 100, 2) as percentual
-            FROM totais
-        $dynamic$,
-            v_result.schema_name,
-            v_categorias_permitidas,
-            v_result.schema_name,
-            v_result.escola_nome
-        );
+                    quantidade,
+                    ROUND((quantidade::NUMERIC / NULLIF(total_categoria, 0)) * 100, 2) as percentual
+                FROM totais
+            $dynamic$,
+                v_result.schema_name,
+                v_categorias_permitidas,
+                v_result.schema_name,
+                v_result.escola_nome
+            );
         
         BEGIN
             FOR v_result IN EXECUTE v_sql
@@ -515,12 +515,12 @@ BEGIN
         WHERE tgname = 'trg_notify_denuncias_change'
         AND tgrelid = format('%I.denuncias', p_schema_name)::regclass
     ) THEN
-        EXECUTE format($dynamic$
-            CREATE TRIGGER trg_notify_denuncias_change
-            AFTER INSERT OR UPDATE ON %I.denuncias
-            FOR EACH ROW
-            EXECUTE FUNCTION notify_denuncias_change()
-        $dynamic$, p_schema_name);
+    EXECUTE format($dynamic$
+        CREATE TRIGGER trg_notify_denuncias_change
+        AFTER INSERT OR UPDATE ON %I.denuncias
+        FOR EACH ROW
+        EXECUTE FUNCTION notify_denuncias_change()
+    $dynamic$, p_schema_name);
         
         RAISE NOTICE 'Trigger de denúncias criado para schema %', p_schema_name;
     ELSE
@@ -585,9 +585,9 @@ BEGIN
     AND ativo = true;
     
     -- Se categoria específica solicitada, validar se permitida
-    IF p_categoria IS NOT NULL AND NOT (p_categoria = ANY(v_categorias_permitidas)) THEN
-        RETURN;
-    END IF;
+        IF p_categoria IS NOT NULL AND NOT (p_categoria = ANY(v_categorias_permitidas)) THEN
+            RETURN;
+        END IF;
     
     -- Rate limiting
     IF NOT public.check_rate_limit(v_user_id, 'dashboard_denuncias_detalhes', 20, 5) THEN

@@ -74,7 +74,7 @@ BEGIN
         AND table_name = 'user_tenant_mapping'
         AND column_name = 'access_scope'
     ) THEN
-        ALTER TABLE public.user_tenant_mapping 
+ALTER TABLE public.user_tenant_mapping 
         ADD COLUMN access_scope JSONB DEFAULT '{}';
     END IF;
 END $$;
@@ -139,7 +139,7 @@ BEGIN
         SELECT 1 FROM pg_constraint 
         WHERE conname = 'chk_tp_dependencia_valida'
     ) THEN
-        ALTER TABLE public.instituicoes 
+ALTER TABLE public.instituicoes
         ADD CONSTRAINT chk_tp_dependencia_valida 
         CHECK (tp_dependencia IS NULL OR tp_dependencia IN ('1', '2', '3', '4'));
     END IF;
@@ -235,10 +235,10 @@ BEGIN
     ) THEN
         CREATE FUNCTION public.update_updated_at_column()
         RETURNS TRIGGER AS $func$
-        BEGIN
-            NEW.updated_at = NOW();
-            RETURN NEW;
-        END;
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
         $func$ LANGUAGE plpgsql;
     END IF;
 END $$;

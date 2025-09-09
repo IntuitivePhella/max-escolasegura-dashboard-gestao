@@ -30,19 +30,19 @@ BEGIN
     
     -- Aplicar triggers de notificação
     BEGIN
-        PERFORM public.setup_presenca_trigger(p_schema_name);
+    PERFORM public.setup_presenca_trigger(p_schema_name);
     EXCEPTION WHEN OTHERS THEN
         RAISE WARNING 'Erro ao criar trigger de presença: %', SQLERRM;
     END;
     
     BEGIN
-        PERFORM public.setup_denuncias_trigger(p_schema_name);
+    PERFORM public.setup_denuncias_trigger(p_schema_name);
     EXCEPTION WHEN OTHERS THEN
         RAISE WARNING 'Erro ao criar trigger de denúncias: %', SQLERRM;
     END;
     
     BEGIN
-        PERFORM public.setup_sentimento_trigger(p_schema_name);
+    PERFORM public.setup_sentimento_trigger(p_schema_name);
     EXCEPTION WHEN OTHERS THEN
         RAISE WARNING 'Erro ao criar trigger de sentimento: %', SQLERRM;
     END;
@@ -333,24 +333,24 @@ BEGIN
                 v_hora := 6 + (random() * 1.5)::INTEGER;
                 v_minuto := (random() * 59)::INTEGER;
                 
-                EXECUTE format($dynamic$
-                    INSERT INTO %I.eventos_acesso (
-                        id, pessoa_id, tipo_evento, timestamp_evento, 
-                        dispositivo_origem, evento_processado, notificacao_enviada
-                    ) VALUES (
-                        gen_random_uuid(),
-                        %s,
-                        'Entrada',
-                        %L::DATE + INTERVAL '%s hours' + INTERVAL '%s minutes',
+            EXECUTE format($dynamic$
+                INSERT INTO %I.eventos_acesso (
+                    id, pessoa_id, tipo_evento, timestamp_evento, 
+                    dispositivo_origem, evento_processado, notificacao_enviada
+                ) VALUES (
+                    gen_random_uuid(),
+                    %s,
+                    'Entrada',
+                    %L::DATE + INTERVAL '%s hours' + INTERVAL '%s minutes',
                         'CATRACA_PRINCIPAL',
-                        true,
-                        true
-                    )
-                $dynamic$,
-                    p_schema_name,
-                    v_aluno_id,
-                    v_data,
-                    v_hora,
+                    true,
+                    true
+                )
+            $dynamic$,
+                p_schema_name,
+                v_aluno_id,
+                v_data,
+                v_hora,
                     v_minuto
                 );
                 
@@ -363,26 +363,26 @@ BEGIN
                 
                 -- 85% dos alunos que entraram também saem
                 IF random() < 0.85 THEN
-                    EXECUTE format($dynamic$
-                        INSERT INTO %I.eventos_acesso (
-                            id, pessoa_id, tipo_evento, timestamp_evento,
-                            dispositivo_origem, evento_processado, notificacao_enviada
-                        ) VALUES (
-                            gen_random_uuid(),
-                            %s,
-                            'Saida',
-                            %L::DATE + INTERVAL '%s hours' + INTERVAL '%s minutes',
+                EXECUTE format($dynamic$
+                    INSERT INTO %I.eventos_acesso (
+                        id, pessoa_id, tipo_evento, timestamp_evento,
+                        dispositivo_origem, evento_processado, notificacao_enviada
+                    ) VALUES (
+                        gen_random_uuid(),
+                        %s,
+                        'Saida',
+                        %L::DATE + INTERVAL '%s hours' + INTERVAL '%s minutes',
                             'CATRACA_PRINCIPAL',
-                            true,
-                            true
-                        )
-                    $dynamic$,
-                        p_schema_name,
-                        v_aluno_id,
-                        v_data,
-                        v_hora,
-                        (random() * 59)::INTEGER
-                    );
+                        true,
+                        true
+                    )
+                $dynamic$,
+                    p_schema_name,
+                    v_aluno_id,
+                    v_data,
+                    v_hora,
+                    (random() * 59)::INTEGER
+                );
                 END IF;
             END IF;
         END LOOP;
@@ -419,14 +419,14 @@ BEGIN
         -- Denúncias graves são mais anônimas
         v_anonima := v_categoria IN ('tráfico', 'violencia', 'assedio') AND random() > 0.3;
         
-        EXECUTE format($dynamic$
-            INSERT INTO %I.denuncias (
-                "ID", "Aluno_ID", "Categoria", "Descricao", "Anonima",
-                "Protocolo", "Status", "Criado_Em", "Atualizado_Em"
-            )
-            SELECT 
-                gen_random_uuid(),
-                (SELECT "ID" FROM %I.pessoas WHERE "Categoria_Principal" = 'ALUNO' ORDER BY random() LIMIT 1),
+    EXECUTE format($dynamic$
+        INSERT INTO %I.denuncias (
+            "ID", "Aluno_ID", "Categoria", "Descricao", "Anonima",
+            "Protocolo", "Status", "Criado_Em", "Atualizado_Em"
+        )
+        SELECT 
+            gen_random_uuid(),
+            (SELECT "ID" FROM %I.pessoas WHERE "Categoria_Principal" = 'ALUNO' ORDER BY random() LIMIT 1),
                 %L,
                 CASE 
                     WHEN %L THEN 'Denúncia anônima de teste - conteúdo sigiloso'
@@ -438,9 +438,9 @@ BEGIN
                 NOW() - INTERVAL '%s days' * random(),
                 NOW() - INTERVAL '%s days' * random() * 0.5
             FROM generate_series(1, 1)
-        $dynamic$,
-            p_schema_name,
-            p_schema_name,
+    $dynamic$,
+        p_schema_name,
+        p_schema_name,
             v_categoria,
             v_anonima,
             v_categoria,
@@ -448,8 +448,8 @@ BEGIN
             floor(random() * p_days_back),
             v_status,
             p_days_back,
-            p_days_back
-        );
+        p_days_back
+    );
     END LOOP;
     
     -- Criar registros socioemocionais de teste
@@ -722,7 +722,7 @@ DECLARE
 BEGIN
     -- Criar roles de exemplo
     BEGIN
-        PERFORM public.create_sample_roles();
+    PERFORM public.create_sample_roles();
     EXCEPTION WHEN OTHERS THEN
         RAISE WARNING 'Erro ao criar roles de exemplo: %', SQLERRM;
     END;

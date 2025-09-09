@@ -1,11 +1,3 @@
-## 🎯 **Agente Recomendado: Product Owner (PO)**
-
-O **Product Owner** é o mais adequado porque:
-- Especialista em quebrar épicos em user stories executáveis
-- Compreende priorização e sequenciamento de entregas
-- Garante que stories tenham critérios de aceite claros
-- Mantém foco no valor de negócio e MVP
-
 ## 📋 **Prompt para @po**
 
 ---
@@ -96,6 +88,10 @@ Story Points: X
 - Stories de frontend dependem das de backend
 - Considerar diferentes permissões por tipo de usuário
 - Incluir stories de teste para cada funcionalidade crítica
+- **Provisionamento de usuários regionais**: Criação automática via batch aprovada
+- ~2.873 usuários regionais (SEC_EDUC_MUN, SEC_EDUC_EST, SEC_SEG_PUB) serão criados automaticamente
+- Incluir story específica para provisionamento de usuários regionais no Epic 1 (Backend Base)
+- Considerar mapeamento automático de acessos baseado em role e localização geográfica
 
 **ENTREGÁVEIS**:
 1. `Epic-01-Backend-Base.md` com stories detalhadas

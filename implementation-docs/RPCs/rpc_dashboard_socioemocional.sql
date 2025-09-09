@@ -657,12 +657,12 @@ BEGIN
         WHERE tgname = 'trg_notify_sentimento_change'
         AND tgrelid = format('%I.registro_sentimentos', p_schema_name)::regclass
     ) THEN
-        EXECUTE format($dynamic$
-            CREATE TRIGGER trg_notify_sentimento_change
-            AFTER INSERT OR UPDATE ON %I.registro_sentimentos
-            FOR EACH ROW
-            EXECUTE FUNCTION notify_sentimento_change()
-        $dynamic$, p_schema_name);
+    EXECUTE format($dynamic$
+        CREATE TRIGGER trg_notify_sentimento_change
+        AFTER INSERT OR UPDATE ON %I.registro_sentimentos
+        FOR EACH ROW
+        EXECUTE FUNCTION notify_sentimento_change()
+    $dynamic$, p_schema_name);
         
         RAISE NOTICE 'Trigger de sentimento criado para schema %', p_schema_name;
     ELSE
