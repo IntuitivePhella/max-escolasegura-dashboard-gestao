@@ -33,12 +33,12 @@ Implementar sistema de dashboards com controle de acesso baseado em roles para v
 - **RLS**: Row Level Security para isolamento de dados
 
 ### 2.2 Frontend
-- **Framework**: Next.js 14+ com App Router
-- **UI Components**: shadcn/ui
+- **Framework**: Next.js 14+ com App Router (migração de Igniter.js existente)
+- **UI Components**: shadcn/ui (já instalado)
 - **Gráficos**: Recharts (integrado com shadcn/ui)
 - **Estilização**: Tailwind CSS
 - **Estado**: React Context + Server Components
-- **Data Fetching**: Server Actions + Route Handlers
+- **Data Fetching**: Server Actions + Route Handlers (substitui controllers Igniter)
 - **Deploy**: Vercel
 
 ## 3. Adequações no Banco de Dados
@@ -215,9 +215,9 @@ supabase functions deploy export-dashboard-pdf
 - [ ] Dia 3: Implementar RPCs dos indicadores e testes
 
 ### Fase 2: Frontend Base (3 dias)
-- [ ] Dia 4: Setup Next.js 14 App Router + shadcn/ui
-- [ ] Dia 5: Implementar autenticação e middleware
-- [ ] Dia 6: Criar layouts e estrutura de rotas
+- [ ] Dia 4: Migrar de Igniter.js para App Router puro
+- [ ] Dia 5: Implementar Route Handlers para dashboard APIs
+- [ ] Dia 6: Atualizar layouts e remover dependências Igniter
 
 ### Fase 3: Componentes e Integração (4 dias)
 - [ ] Dia 7: Implementar componentes de gráficos
@@ -331,7 +331,7 @@ Opções em consideração:
 
 ---
 
-**Status**: 📋 Planejamento Aprovado
+**Status**: 📋 Planejamento Aprovado + Migração Incremental
 **Última Atualização**: 2024-01-20
-**Versão**: 3.0.0
-**Próximo Marco**: Início da implementação do backend
+**Versão**: 3.1.0
+**Próximo Marco**: Migração de Igniter.js para App Router puro
