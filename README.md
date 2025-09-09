@@ -213,8 +213,8 @@ Dashboard de gestão para o projeto Max Escola Segura com 4 níveis de acesso di
 
 1. Clone o repositório:
     ```bash
-git clone https://github.com/IntuitivePhella/max-escolasegura-dashboard-gestao.git
-cd max-escolasegura-dashboard-gestao
+    git clone https://github.com/IntuitivePhella/max-escolasegura-dashboard-gestao.git
+    cd max-escolasegura-dashboard-gestao
     ```
 
 2. Instale as dependências:
@@ -223,20 +223,20 @@ cd max-escolasegura-dashboard-gestao
     ```
 
 3. Configure as variáveis de ambiente:
-```bash
-cp .env.example .env.local
-```
+   ```bash
+   cp .env.example .env.local
+   ```
 
 Edite `.env.local`:
-    ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
+    ```bash
+    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+    ```
 
 4. Execute as migrations do banco:
     ```bash
-npm run db:migrate
+    npm run db:migrate
     ```
 
 5. Inicie o servidor de desenvolvimento:
