@@ -256,6 +256,51 @@ npm run test:load
 - [Guia de Contribuição](./CONTRIBUTING.md)
 - [Changelog](./CHANGELOG.md)
 
+## 🚀 Início do Desenvolvimento
+
+### Para Product Owner / Scrum Master
+
+Antes de iniciar o desenvolvimento, execute:
+
+1. **Criar User Stories**: Use o prompt preparado em:
+   ```
+   implementation-docs/Stories/prompt-po.md
+   ```
+   
+2. **Executar o prompt com @po**:
+   ```
+   @po [conteúdo do prompt-po.md]
+   ```
+
+3. **Resultado esperado**: 5 épicos com user stories detalhadas organizadas por prioridade
+
+### Para Desenvolvedores
+
+Após as user stories estarem prontas:
+
+1. **Backend First**: Comece pelo Epic 1 (Backend Base)
+2. **Ambiente Local**: Configure conforme seção "Quick Start"
+3. **Incremental**: Implemente story por story seguindo dependências
+4. **Validação**: Teste cada indicador isoladamente
+
+### Estrutura de Desenvolvimento
+
+```
+implementation-docs/
+├── action-plan-V3.md          # Plano aprovado
+├── Stories/
+│   ├── prompt-po.md           # Prompt para criar stories ⭐
+│   ├── Epic-01-Backend-Base.md
+│   ├── Epic-02-Frontend-Base.md
+│   ├── Epic-03-Components-Integration.md
+│   ├── Epic-04-Edge-Functions.md
+│   └── Epic-05-Refinements.md
+├── RPCs/                      # Scripts SQL (se implementados)
+└── sql/                       # Migrations consolidadas
+```
+
+## 📚 Documentação
+
 ## 🤝 Contribuindo
 
 1. Fork o projeto

@@ -1,0 +1,262 @@
+# 📊 Plano Completo de Adequação - Dashboard EMEB Educar
+
+## 1. Visão Geral do Projeto
+
+### 1.1 Objetivo
+Implementar sistema de dashboards com controle de acesso baseado em roles para visualização de indicadores educacionais, com 4 níveis de acesso distintos:
+- **DIRETORIA**: Acesso aos dados de sua escola
+- **SEC_EDUC_MUN**: Acesso às escolas municipais do município
+- **SEC_EDUC_EST**: Acesso às escolas estaduais do estado
+- **SEC_SEG_PUB**: Acesso a denúncias específicas das escolas municipais e estaduais do estado
+
+### 1.2 Indicadores a Implementar
+1. **Presença**: Taxa atual vs total de alunos (Radial Chart)
+2. **Denúncias**: Bullying e Infraestrutura - TRATADA vs PENDENTE (Bar Chart Stacked)
+3. **Socioemocional**: Scores por dimensão (Radar Chart)
+
+## 2. Arquitetura da Solução
+
+### 2.1 Backend (Supabase)
+- **Banco de Dados**: PostgreSQL com estrutura multi-tenant
+- **Autenticação**: Supabase Auth
+- **Realtime**: Supabase Realtime para atualizações
+- **RPCs**: Functions para agregação de dados com controle de acesso
+- **RLS**: Row Level Security para isolamento de dados
+
+### 2.2 Frontend
+- **Framework**: Next.js 14+ com App Router
+- **UI Components**: shadcn/ui
+- **Gráficos**: Recharts (integrado com shadcn/ui)
+- **Estilização**: Tailwind CSS
+- **Estado**: Zustand + Tanstack Query
+- **Deploy**: Netlify
+
+## 3. Adequações no Banco de Dados
+
+### 3.1 Novas Tabelas
+- [x] `role_permissions`: Controle de roles especiais
+- [x] Índices para otimização de consultas
+
+### 3.2 Alterações em Tabelas Existentes
+- [x] `user_tenant_mapping`: Adicionar special_role_id e access_scope
+- [x] `instituicoes`: Adicionar co_uf, co_municipio, tp_dependencia
+
+### 3.3 Funções (RPCs)
+- [x] `rpc_dashboard_presenca`: Agregação de dados de presença
+- [x] `rpc_dashboard_denuncias`: Agregação de denúncias por categoria
+- [x] `rpc_dashboard_sentimento`: Agregação de scores socioemocionais
+- [x] `check_user_dashboard_access`: Verificação de permissões
+- [x] `get_user_accessible_schools`: Listar escolas acessíveis ao usuário
+
+### 3.4 Triggers para Realtime
+- [x] `notify_dashboard_presenca_change`: Atualização de presença
+- [x] `notify_dashboard_denuncias_change`: Atualização de denúncias
+- [x] `notify_dashboard_sentimento_change`: Atualização socioemocional
+
+## 4. Componentes Frontend
+
+### 4.1 Estrutura de Pastas (Next.js App Router)
+```
+app/
+├── (auth)/
+│   ├── login/
+│   └── layout.tsx
+├── dashboard/
+│   ├── page.tsx
+│   ├── layout.tsx
+│   ├── components/
+│   │   ├── presence-chart.tsx
+│   │   ├── complaints-chart.tsx
+│   │   ├── emotional-chart.tsx
+│   │   └── school-selector.tsx
+│   └── [schoolId]/
+│       └── page.tsx
+├── api/
+│   └── dashboard/
+│       ├── presence/route.ts
+│       ├── complaints/route.ts
+│       └── emotional/route.ts
+└── layout.tsx
+
+components/
+├── ui/
+│   ├── chart.tsx (shadcn/ui)
+│   ├── card.tsx
+│   ├── select.tsx
+│   └── ...
+└── charts/
+    ├── radial-chart.tsx
+    ├── bar-chart-stacked.tsx
+    └── radar-chart.tsx
+```
+
+### 4.2 Componentes de Gráficos (shadcn/ui + Recharts)
+
+#### Presença (Radial Chart)
+- Componente: `@/components/ui/chart` com RadialBarChart
+- Props: presentes, total, porcentagem
+- Cores: Verde (presente) / Cinza (ausente)
+
+#### Denúncias (Bar Chart Stacked)
+- Componente: `@/components/ui/chart` com BarChart
+- Props: meses, categorias, status (tratada/pendente)
+- Cores: Azul (tratada) / Laranja (pendente)
+
+#### Socioemocional (Radar Chart)
+- Componente: `@/components/ui/chart` com RadarChart
+- Props: dimensões, scores (0-10)
+- Cores: Gradiente de cores por dimensão
+
+### 4.3 Fluxo de Autenticação
+1. Login via Supabase Auth
+2. Middleware verifica role do usuário
+3. Redirect para dashboard apropriado
+4. Carregamento de escolas permitidas
+5. Seleção de escola(s) para visualização
+
+## 5. Configuração do Deploy (Netlify)
+
+### 5.1 Variáveis de Ambiente
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+### 5.2 Build Settings
+```toml
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NEXT_TELEMETRY_DISABLED = "1"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+```
+
+### 5.3 Headers de Segurança
+```toml
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+```
+
+## 6. Cronograma de Implementação
+
+### Fase 1: Backend (3-4 dias)
+- [ ] Dia 1: Criar tabelas e alterações no BD
+- [ ] Dia 2: Implementar RPCs principais
+- [ ] Dia 3: Testes e ajustes das RPCs
+- [ ] Dia 4: Configurar triggers para realtime
+
+### Fase 2: Frontend Base (3-4 dias)
+- [ ] Dia 5: Setup Next.js + shadcn/ui
+- [ ] Dia 6: Implementar autenticação e middleware
+- [ ] Dia 7: Criar layouts e rotas
+- [ ] Dia 8: Componente de seleção de escolas
+
+### Fase 3: Componentes de Gráficos (2-3 dias)
+- [ ] Dia 9: Implementar gráficos com shadcn/ui
+- [ ] Dia 10: Integração com RPCs
+- [ ] Dia 11: Realtime updates
+
+### Fase 4: Deploy e Testes (2 dias)
+- [ ] Dia 12: Deploy no Netlify
+- [ ] Dia 13: Testes finais e ajustes
+
+## 7. Considerações de Segurança
+
+### 7.1 Backend
+- RLS ativado em todas as tabelas
+- RPCs com SECURITY DEFINER
+- Validação de roles em todas as funções
+- Logs de auditoria para acessos
+
+### 7.2 Frontend
+- Sanitização de inputs
+- Rate limiting nas APIs
+- HTTPS obrigatório
+- CSP headers configurados
+
+## 8. Monitoramento e Manutenção
+
+### 8.1 Métricas a Monitorar
+- Taxa de erro das RPCs
+- Tempo de resposta dos dashboards
+- Uso de banda/recursos
+- Acessos por role
+
+### 8.2 Backups
+- Backup diário do BD (Supabase)
+- Versionamento de código (Git)
+- Snapshots de configuração
+
+## 9. Documentação Necessária
+
+### 9.1 Para Desenvolvedores
+- [ ] README.md com setup local
+- [ ] Documentação das RPCs
+- [ ] Guia de contribuição
+- [ ] Exemplos de uso dos componentes
+
+### 9.2 Para Usuários
+- [ ] Manual de uso por role
+- [ ] FAQ comum
+- [ ] Vídeos tutoriais
+- [ ] Guia de troubleshooting
+
+## 10. Riscos e Mitigações
+
+| Risco | Probabilidade | Impacto | Mitigação |
+|-------|--------------|---------|-----------|
+| Performance com muitas escolas | Média | Alto | Implementar paginação e cache |
+| Complexidade das permissões | Alta | Médio | Testes extensivos por role |
+| Limites do Netlify | Baixa | Médio | Monitorar uso e otimizar build |
+| Dados inconsistentes | Média | Alto | Validações e constraints no BD |
+
+## 11. Checklist de Entrega
+
+### Backend
+- [ ] Todas as tabelas criadas
+- [ ] RPCs funcionando corretamente
+- [ ] Triggers configurados
+- [ ] Testes de permissão por role
+- [ ] Documentação das APIs
+
+### Frontend
+- [ ] Autenticação funcionando
+- [ ] Todos os gráficos implementados
+- [ ] Responsividade testada
+- [ ] Performance otimizada
+- [ ] Acessibilidade verificada
+
+### Deploy
+- [ ] Variáveis de ambiente configuradas
+- [ ] Build sem erros
+- [ ] SSL configurado
+- [ ] Monitoramento ativo
+- [ ] Backup configurado
+
+## 12. Contatos e Responsáveis
+
+- **Backend/BD**: [Responsável]
+- **Frontend**: [Responsável]
+- **DevOps/Deploy**: [Responsável]
+- **Testes**: [Responsável]
+- **Documentação**: [Responsável]
+
+---
+
+**Status**: 🟡 Em Desenvolvimento
+**Última Atualização**: [Data]
+**Versão**: 1.0.0

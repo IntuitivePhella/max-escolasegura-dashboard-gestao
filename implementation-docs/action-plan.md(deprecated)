@@ -321,3 +321,182 @@ Decisões propostas:
 - Exemplos de charts (radial/bar/radar) devem permanecer como documentação (`.md/.mdx`) e não como arquivos `.ts/.tsx` soltos fora de `src/` para evitar erros de lint.
 - Alternativamente, adicionar `apps/administrativo/diretoria/Dashboard/implementation-docs` ao `.eslintignore`.
 - Componentes de produção usarão `src/components/ui/chart.tsx` (padrão shadcn/recharts).
+
+---
+
+## 14. Análise QA e Fortalecimento (Pós-Revisão)
+
+### 14.1 Segurança do Provisionamento
+
+**Proteção da Fila de Provisionamento:**
+```sql
+-- RLS na fila
+ALTER TABLE public.provisioning_queue ENABLE ROW LEVEL SECURITY;
+
+-- Policy para Edge Function (service role específica)
+CREATE POLICY provisioning_service_only ON public.provisioning_queue 
+  FOR ALL TO provisioning_service_role;
+
+-- Auditoria: adicionar campo processed_by
+ALTER TABLE public.provisioning_queue 
+  ADD COLUMN processed_by text,
+  ADD COLUMN processing_started_at timestamptz;
+```
+
+**Não Exposição de Credenciais:**
+- Edge Function recebe telefone completo, extrai últimos 5 dígitos, descarta o resto
+- Logs da Edge Function não devem conter dados sensíveis
+- Senha hasheada antes de armazenar em `{schema}.usuarios` (se aplicável)
+
+### 14.2 Critérios de Aceite Específicos
+
+**Provisionamento DIRETORIA:**
+```yaml
+aceite_provisionamento:
+  timeout_edge_function: 30s
+  retry_attempts: 3
+  cleanup_failures: "manual_review_queue"
+  duplicate_email_strategy: "append_schema_suffix" # ex: diretor@escola.com.br → diretor.escola123@escola.com.br
+  auth_creation_success: "usuario_existe_em_auth_e_schema"
+  rollback_strategy: "marcar_erro_na_fila_para_reprocessamento"
+```
+
+**RBAC Dashboard:**
+```yaml
+aceite_rbac:
+  middleware_block: "role NOT IN (SECRETARIO, DIRETORIA) → redirect /login"
+  api_enforcement: "403 Forbidden para roles não permitidos"
+  ui_graceful: "mensagem 'Acesso restrito' quando schemas/roles vazios"
+```
+
+**Indicadores Performance:**
+```yaml
+aceite_indicadores:
+  presenca_atual:
+    latency_p95: "< 2s"
+    volume_max: "até 50 escolas simultâneas"
+    fallback: "retorna zeros se erro, não quebra UI"
+  
+  denuncias_mensal:
+    latency_p95: "< 1s"
+    materialize_trigger: "volume > 1000 denúncias/mês por escola"
+  
+  sentimento_radar:
+    latency_p95: "< 3s"
+    periodo_max: "1 ano retrospectivo"
+    dimensoes_max: "10 dimensões por consulta"
+```
+
+**Realtime End-to-End:**
+```yaml
+aceite_realtime:
+  latency_evento_ui: "< 5s desde insert até refresh dashboard"
+  debounce_window: "5s para evitar flood de updates"
+  max_eventos_feed: "100 eventos/minuto por escola"
+  recovery_reconect: "auto-reconexão em caso de perda de conexão"
+```
+
+### 14.3 Estratégia de Testes
+
+**Testes Unitários Críticos:**
+```typescript
+// Edge Function
+test('provisioning: email válido + telefone válido → sucesso')
+test('provisioning: telefone < 5 dígitos → ERROR com mensagem clara')
+test('provisioning: auth.admin falha → marca erro na fila')
+test('provisioning: schema inexistente → ERROR e não cria usuário órfão')
+
+// RPCs Dashboard
+test('rpc_dashboard_presenca: sem dados → {presentes: 0, total: X}')
+test('rpc_dashboard_presenca: múltiplas escolas → soma correta')
+test('rpc_dashboard_denuncias: categorias inexistentes → filtro vazio')
+test('rpc_dashboard_sentimento: período futuro → erro validação')
+
+// RBAC
+test('middleware: RESPONSAVEL → blocked')
+test('middleware: DIRETORIA → allowed')
+test('api: schemas endpoint com role inválido → 403')
+```
+
+**Testes de Integração:**
+```typescript
+// End-to-end críticos
+test('insert public.instituicoes → usuário DIRETORIA funcional em 30s')
+test('login DIRETORIA → dashboard mostra apenas própria escola')
+test('login SECRETARIO → selector multi-escola funciona')
+test('eventos_acesso insert → dashboard realtime update < 5s')
+
+// RBAC integrado
+test('DIRETORIA tenta acessar escola diferente → 403')
+test('SECRETARIO acessa escolas autorizadas → sucesso')
+test('role inexistente tenta login → redirect login')
+```
+
+**Testes de Carga e Performance:**
+```typescript
+// Benchmarks
+test('50 consultas presença simultâneas < 2s each')
+test('realtime: 100 eventos/min → dashboard estável')
+test('provisioning: 10 instituições simultâneas → todas processadas')
+
+// Stress testing
+test('1000 alunos, 100 entrada+saída → presença calculada corretamente')
+test('múltiplas escolas com denúncias → agregação sem timeout')
+```
+
+### 14.4 Monitoramento e Observabilidade
+
+**Alertas Essenciais:**
+```yaml
+alerts:
+  - provisioning_queue_size > 10: "fila acumulando, verificar Edge Function"
+  - rpc_dashboard_presenca_p95 > 2s: "performance degradada"
+  - realtime_lag > 30s: "dashboard desatualizado"
+  - failed_auth_creation > 5/hour: "problemas na criação de usuários"
+  
+logs_importantes:
+  - edge_function: "início/fim processamento, erros, tempo execução"
+  - dashboard_api: "latência por endpoint, schemas acessados"
+  - realtime: "eventos publicados, clientes conectados"
+```
+
+**Métricas de Negócio:**
+```yaml
+metrics:
+  - usuarios_diretor_criados_por_dia
+  - login_diretoria_success_rate  
+  - dashboard_indicators_usage (qual indicador mais acessado)
+  - realtime_connection_stability
+```
+
+### 14.5 Implementação Faseada (Sugestão QA)
+
+**Fase 1: Provisionamento DIRETORIA (2-3 dias)**
+- [ ] DDL provisioning_queue com RLS
+- [ ] Edge Function básica (sem retry complexo)
+- [ ] Testes unitários do provisionamento
+- [ ] Deploy e teste com 1 instituição
+
+**Fase 2: RBAC Completo (1-2 dias)**
+- [ ] Middleware bloqueio de papéis
+- [ ] API 403 enforcement
+- [ ] UI estados "sem acesso"
+- [ ] Testes de segurança
+
+**Fase 3: Indicadores Básicos (3-4 dias)**
+- [ ] RPC presença atual
+- [ ] RPC denúncias (versão simples)
+- [ ] Gráficos radial + barras
+- [ ] Testes de performance básicos
+
+**Fase 4: Realtime + Indicadores Avançados (3-5 dias)**
+- [ ] Dashboard feed + triggers
+- [ ] Realtime subscription no frontend
+- [ ] RPC sentimento (radar)
+- [ ] Testes end-to-end completos
+
+**Fase 5: Otimização + Secretário (2-3 dias)**
+- [ ] Análise performance real
+- [ ] Views materializadas se necessário
+- [ ] Definição processo SECRETARIO
+- [ ] Monitoramento completo

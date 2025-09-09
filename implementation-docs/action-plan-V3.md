@@ -284,6 +284,10 @@ supabase functions deploy export-dashboard-pdf
 ### 11.1 Provisionamento de Usuários
 **Status**: PENDENTE - A ser definido com a equipe
 
+- Como criar usuários DIRETORIA?
+- Como criar usuários SECRETARIO?
+- Automatizar ou processo manual?
+
 Opções em consideração:
 1. Processo manual via admin panel
 2. Importação em batch via CSV
