@@ -1,6 +1,29 @@
-# 📊 Plano Completo de Adequação - Dashboard Max Escola Segura
+# 📊 Dashboard Max Escola Segura - MVP APROVADO
 
-## 1. Visão Geral do Projeto
+## 🚨 **DECISÕES FINAIS IMPLEMENTADAS (15/01/2025)**
+
+### **✅ MVP Ultra-Simplificado Aprovado**
+**Análise PO**: Protótipos UX originais continham over-engineering severo (mapas SVG, rankings, comparativos complexos)  
+**Decisão**: Focar em MVP simples baseado na referência visual `diretoria.html`  
+**Cronograma**: 2-3 dias vs 2-3 semanas da proposta original
+
+### **✅ Especificações Finais:**
+1. **Realtime para TODOS**: presence_update, complaint_update, emotional_update, security_update
+2. **DIRETORIA específico**: Botão "Emergência 190" + Visão Temporal/Por Aluno + Filtro tipo denúncia
+3. **SEC_SEG_PUB específico**: Ticker alertas críticos + APENAS gráfico segurança
+4. **Drill-down detalhes**: Sentimentos (todos) + Denúncias (APENAS não anônimas)
+5. **Gráficos shadcn/ui obrigatórios**: RadialBarChart + StackedBarChart + RadarChart (baseados em chart-examples/)
+
+### **❌ Funcionalidades Removidas (Over-engineering):**
+- Mapas SVG interativos estaduais
+- Rankings top 10 municípios  
+- Comparativos vs Estado/Região
+- Sistema emergência complexo
+- Edge Functions desnecessárias
+
+---
+
+## 1. Visão Geral do Projeto MVP
 
 ### 1.1 Objetivo
 Implementar sistema de dashboards com controle de acesso baseado em roles para visualização de indicadores educacionais e de segurança, com 4 níveis de acesso distintos:
@@ -207,31 +230,32 @@ supabase functions deploy aggregate-dashboard-data
 supabase functions deploy export-dashboard-pdf
 ```
 
-## 7. Cronograma de Implementação
+## 7. Cronograma MVP Simplificado - 2-3 DIAS
 
-### Fase 1: Backend Base (3 dias)
-- [ ] Dia 1: Criar script SQL com todas as tabelas e alterações
-- [ ] Dia 2: Implementar RPCs de segurança e consulta
-- [ ] Dia 3: Implementar RPCs dos indicadores e testes
+### ✅ **DECISÃO APROVADA**: MVP Ultra-Simplificado
+**Referência**: Simplicidade visual do `diretoria.html`  
+**Princípio**: Dashboards são sobre DADOS, não interfaces complexas
 
-### Fase 2: Frontend Base (3 dias)
-- [ ] Dia 4: Migrar de Igniter.js para App Router puro
-- [ ] Dia 5: Implementar Route Handlers para dashboard APIs
-- [ ] Dia 6: Atualizar layouts e remover dependências Igniter
+### **Fase 1: Backend Mínimo (1 dia)**
+- [x] Scripts SQL já implementados (security-fixes, tabelas-adequacoes, middleware_helpers, RPCs indicadores)
+- [ ] **Dia 1**: Validar RPCs existentes + implementar realtime triggers
 
-### Fase 3: Componentes e Integração (4 dias)
-- [ ] Dia 7: Implementar componentes de gráficos
-- [ ] Dia 8: Integração com RPCs e data fetching
-- [ ] Dia 9: Implementar seletor de escolas e filtros
-- [ ] Dia 10: Configurar Realtime updates
+### **Fase 2: Frontend MVP (1-2 dias)**
+- [ ] **Dia 2**: Implementar layout universal com shadcn/ui
+  - 4 cards KPI + 3 gráficos (RadialBar + StackedBar + Radar)
+  - Hook realtime universal
+  - Filtros mínimos por role
+- [ ] **Dia 3**: Drill-down modais + funcionalidades específicas por role
+  - DIRETORIA: Botão 190 + visão temporal/por aluno + filtro denúncia
+  - SEC_SEG_PUB: Ticker alertas críticos
+  - SEC_EDUC_*: Multi-select escolas
 
-### Fase 4: Edge Functions e Finalização (2 dias)
-- [ ] Dia 11: Implementar Edge Functions prioritárias
-- [ ] Dia 12: Deploy Vercel + testes de integração
-
-### Fase 5: Refinamentos (2 dias)
-- [ ] Dia 13: Otimizações de performance
-- [ ] Dia 14: Documentação e handoff
+### **Funcionalidades Removidas do Escopo (Over-engineering):**
+- ❌ Mapas SVG interativos estaduais
+- ❌ Rankings top 10 municípios  
+- ❌ Comparativos vs Estado/Região
+- ❌ Sistema emergência complexo
+- ❌ Edge Functions desnecessárias
 
 ## 8. Considerações de Segurança
 
@@ -366,38 +390,44 @@ supabase functions deploy export-dashboard-pdf
 - [ ] Alertas automáticos
 - [ ] Dashboard mobile app
 
-## 12. Checklist de Entrega
+## 12. Checklist MVP Simplificado
 
-### Backend
-- [ ] Script SQL executado sem erros
-- [ ] Todas as RPCs testadas
-- [ ] Triggers de Realtime funcionando
-- [ ] Edge Functions deployadas
-- [ ] Documentação das APIs
+### ✅ **Backend Mínimo**
+- [x] Scripts SQL base já implementados (12 arquivos)
+- [ ] RPCs indicadores validados (presença, denúncias, socioemocional, segurança)
+- [ ] Realtime triggers configurados (presence_update, complaint_update, emotional_update, security_update)
+- [ ] Validação: queries executam em < 2s com dados reais
 
-### Frontend
-- [ ] Build sem erros no Vercel
-- [ ] Autenticação funcionando
-- [ ] Todos os 4 indicadores implementados
-- [ ] Realtime updates testados
-- [ ] Responsividade validada
+### ✅ **Frontend MVP - shadcn/ui**
+- [ ] Layout universal baseado em `diretoria.html`
+- [ ] 4 cards KPI simples (total alunos, presentes, denúncias, bem-estar)
+- [ ] 3 gráficos shadcn/ui:
+  - [ ] **RadialBarChart** presença (chart-examples/radial-chart-shape)
+  - [ ] **StackedBarChart** denúncias (chart-examples/barchart-stacked+legend) 
+  - [ ] **RadarChart** socioemocional (chart-examples/radarchart-grid-circle)
+- [ ] Hook realtime universal funcionando
+- [ ] Drill-down modais com tabelas de detalhes
+- [ ] Filtros funcionais por role:
+  - [ ] **DIRETORIA**: Botão 190 + visão temporal/aluno + filtro denúncia
+  - [ ] **SEC_SEG_PUB**: Ticker alertas críticos realtime
+  - [ ] **SEC_EDUC_***: Multi-select escolas
 
-### Segurança
-- [ ] Testes de permissão por role
-- [ ] Validação de SQL injection
-- [ ] Rate limiting testado
-- [ ] Logs de auditoria verificados
+### ✅ **Funcionalidades Específicas**
+- [ ] Drill-down sentimentos: modal com tabela completa
+- [ ] Drill-down denúncias: APENAS não anônimas (`WHERE Anonima = false`)
+- [ ] Realtime: todos os roles recebem updates apropriados
+- [ ] Responsividade: mobile-first, stack vertical
 
-### Deploy
-- [ ] Domínio configurado
+### ✅ **Deploy**
+- [ ] Build Next.js 14 sem erros
+- [ ] Deploy Vercel funcionando  
+- [ ] Variáveis ambiente configuradas
 - [ ] SSL ativo
-- [ ] Variáveis de ambiente
-- [ ] Monitoramento configurado
-- [ ] Backup automático
 
 ---
 
-**Status**: 📋 Planejamento Aprovado + Migração Incremental
-**Última Atualização**: 2024-01-20
-**Versão**: 3.1.0
-**Próximo Marco**: Migração de Igniter.js para App Router puro
+**Status**: 🚀 **MVP APROVADO - SIMPLICIDADE TOTAL**  
+**Cronograma**: 2-3 dias vs 2-3 semanas originais  
+**Última Atualização**: 15/01/2025  
+**Versão**: 4.0-MVP  
+**Princípio**: Dashboards são sobre DADOS, não interfaces complexas
