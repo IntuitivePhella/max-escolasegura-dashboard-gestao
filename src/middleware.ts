@@ -20,6 +20,7 @@ const PROTECTED_ROUTES = [
 const PUBLIC_ROUTES = [
   '/login',
   '/auth',
+  '/dashboard-demo',
   '/_next',
   '/favicon.ico'
 ]

@@ -106,13 +106,11 @@ const ChartTooltip = RechartsPrimitive.Tooltip
 
 function ChartTooltipContent({
   active,
-  // @ts-expect-error - Expected
   payload,
   className,
   indicator = "dot",
   hideLabel = false,
   hideIndicator = false,
-  // @ts-expect-error - Expected
   label,
   labelFormatter,
   labelClassName,
@@ -181,7 +179,6 @@ function ChartTooltipContent({
     >
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
-        {/* @ts-expect-error - Expected */}
         {payload.map((item, index) => {
           const key = `${nameKey || item.name || item.dataKey || "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
@@ -260,14 +257,12 @@ function ChartLegendContent({
   verticalAlign = "bottom",
   nameKey,
 }: React.ComponentProps<"div"> &
-  // @ts-expect-error - Expected
   Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
     hideIcon?: boolean
     nameKey?: string
   }) {
   const { config } = useChart()
 
-  // @ts-expect-error - Expected
   if (!payload?.length) {
     return null
   }
@@ -280,7 +275,6 @@ function ChartLegendContent({
         className
       )}
     >
-      {/* @ts-expect-error - Expected */}
       {payload.map((item) => {
         const key = `${nameKey || item.dataKey || "value"}`
         const itemConfig = getPayloadConfigFromPayload(config, item, key)

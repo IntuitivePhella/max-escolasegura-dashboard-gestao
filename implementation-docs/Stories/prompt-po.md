@@ -1,47 +1,52 @@
-## 📋 **Prompt para @po**
+## 📋 **Prompt para @po - Pós-MVP Frontend**
 
 ---
 
 **@po**
 
-Como Product Owner do projeto "Dashboard Max Escola Segura", você precisa transformar o plano de implementação aprovado (action-plan-V3.md) em user stories executáveis para a equipe de desenvolvimento.
+Como Product Owner do projeto "Dashboard Max Escola Segura", você precisa criar user stories para as **próximas fases de desenvolvimento** após o MVP frontend ter sido implementado com sucesso.
 
-**CONTEXTO**: 
-- Plano V3 aprovado com arquitetura Next.js 14 App Router + Supabase
-- **SITUAÇÃO ATUAL**: Projeto Next.js 14 já existe com Supabase configurado, mas usando Igniter.js
-- **ESTRATÉGIA**: Migração incremental para App Router puro (não criar do zero)
-- 4 indicadores definidos (presença, denúncias educacionais, socioemocional, denúncias de segurança)
-- 4 tipos de usuários (DIRETORIA, SEC_EDUC_MUN, SEC_EDUC_EST, SEC_SEG_PUB)
-- Deploy Vercel + Supabase Edge Functions
-- Cronograma de 14 dias dividido em 5 fases
+**CONTEXTO ATUAL (15/01/2025)**: 
+- ✅ **MVP Frontend IMPLEMENTADO**: Dashboard funcional com 3 gráficos shadcn/ui
+- ✅ **Demo Acessível**: `/dashboard-demo` com dados mock funcionando
+- ✅ **Componentes Prontos**: RadialBar (presença), StackedBar (denúncias), Radar (socioemocional)
+- ✅ **Funcionalidades Específicas**: Botão 190 (DIRETORIA), Ticker alertas (SEC_SEG_PUB)
+- ✅ **Hook Realtime**: Estrutura implementada aguardando integração
+- 📋 **Pendente**: Integração com backend Supabase, autenticação, dados reais
+
+**TECNOLOGIAS JÁ IMPLEMENTADAS**:
+- Next.js 14 App Router (puro, sem Igniter.js)
+- shadcn/ui + Recharts (gráficos funcionando)
+- TypeScript com interfaces completas
+- Build de produção sem erros
 
 **SUA TAREFA**:
-Criar user stories detalhadas organizadas por épicos, seguindo a estrutura do cronograma aprovado. Salve na pasta `implementation-docs/Stories/`.
+Criar user stories detalhadas para completar a integração do dashboard com o backend Supabase, implementar autenticação e popular com dados reais. Salve na pasta `implementation-docs/Stories/`.
 
 **ESTRUTURA REQUERIDA**:
 
-1. **Epic 1: Backend Base** (Dias 1-3)
-   - Stories para setup do banco de dados
-   - Stories para implementação de RPCs
-   - Stories para funções de segurança
+1. **Epic 1: Integração Backend** (2-3 dias)
+   - Stories para executar scripts SQL no Supabase
+   - Stories para validar RPCs com dados reais
+   - Stories para configurar realtime triggers
+   - Stories para conectar componentes aos RPCs
 
-2. **Epic 2: Frontend Base** (Dias 4-6) 
-   - Stories para migração de Igniter.js para App Router puro
-   - Stories para implementação de Route Handlers nativos
-   - Stories para remoção de dependências e atualização de layouts
+2. **Epic 2: Autenticação e Autorização** (2 dias) 
+   - Stories para integrar Supabase Auth
+   - Stories para implementar fluxo de login
+   - Stories para ativar middleware RBAC
+   - Stories para mapear usuários aos roles
 
-3. **Epic 3: Componentes e Integração** (Dias 7-10)
-   - Stories para cada um dos 4 indicadores
-   - Stories para integração com RPCs
-   - Stories para Realtime updates
+3. **Epic 3: Dados Reais e Refinamentos** (1-2 dias)
+   - Stories para popular drill-down com dados reais
+   - Stories para implementar filtro de denúncias anônimas
+   - Stories para conectar eventos realtime
+   - Stories para testes de integração
 
-4. **Epic 4: Edge Functions e Finalização** (Dias 11-12)
-   - Stories para Edge Functions prioritárias
-   - Stories para deploy e integração
-
-5. **Epic 5: Refinamentos** (Dias 13-14)
-   - Stories para otimizações
-   - Stories para documentação
+4. **Epic 4: Deploy e Monitoramento** (1 dia)
+   - Stories para configurar Vercel
+   - Stories para variáveis de ambiente
+   - Stories para monitoramento e logs
 
 **FORMATO DE CADA STORY**:
 ```markdown
@@ -57,51 +62,62 @@ Criar user stories detalhadas organizadas por épicos, seguindo a estrutura do c
 - [ ] Critério 3
 
 ### Definição de Pronto
-- [ ] Código implementado
-- [ ] Testes passando
-- [ ] Code review aprovado
-- [ ] Deploy realizado
+- [ ] Código implementado e testado
+- [ ] Integração funcionando
+- [ ] Sem erros no console
+- [ ] Performance adequada (< 2s)
 
 ### Tasks Técnicas
-- [ ] Task 1
-- [ ] Task 2
+- [ ] Task 1 (especificar arquivo/componente)
+- [ ] Task 2 (especificar RPC/função)
+
+### Componentes/Arquivos Afetados
+- `src/components/dashboard/[component].tsx`
+- `supabase/functions/[rpc_name]`
 
 ### Dependências
 - Dependente de: US-XXX
 - Bloqueia: US-YYY
 
 ### Estimativa
-Story Points: X
+Story Points: X (1-8)
 
-### Notas Técnicas
-[Detalhes específicos de implementação]
+### Notas de Integração
+[Detalhes específicos sobre RPCs, schemas, ou configurações]
 ```
 
 **PRIORIDADES**:
-1. **ALTA**: Backend base e autenticação (essencial para MVP)
-2. **ALTA**: Indicador de presença (mais simples, validação rápida)
-3. **MÉDIA**: Demais indicadores 
-4. **BAIXA**: Edge Functions e otimizações
+1. **CRÍTICA**: Scripts SQL + RPCs (sem isso nada funciona)
+2. **ALTA**: Autenticação básica (login/logout)
+3. **ALTA**: Conectar componentes aos dados reais
+4. **MÉDIA**: Realtime funcionando completamente
+5. **BAIXA**: Refinamentos e otimizações
 
 **CONSIDERAÇÕES ESPECIAIS**:
-- Cada story deve ser implementável em 4-8 horas
-- Stories de frontend dependem das de backend
-- Considerar diferentes permissões por tipo de usuário
-- Incluir stories de teste para cada funcionalidade crítica
-- **Provisionamento de usuários regionais**: Criação automática via batch aprovada
-- ~2.873 usuários regionais (SEC_EDUC_MUN, SEC_EDUC_EST, SEC_SEG_PUB) serão criados automaticamente
-- Incluir story específica para provisionamento de usuários regionais no Epic 1 (Backend Base)
-- Considerar mapeamento automático de acessos baseado em role e localização geográfica
+- Componentes frontend JÁ EXISTEM - focar em integração
+- Usar os RPCs já definidos nos scripts SQL
+- Manter simplicidade - não adicionar features novas
+- Cada story deve ser testável isoladamente
+- Considerar multi-tenant desde o início
+- Hook realtime já existe - apenas conectar eventos
+
+**COMPONENTES JÁ IMPLEMENTADOS** (para referência):
+- `presence-chart.tsx` - Precisa conectar com `rpc_dashboard_presenca`
+- `complaints-chart.tsx` - Precisa conectar com `rpc_dashboard_denuncias`
+- `emotional-chart.tsx` - Precisa conectar com `rpc_dashboard_socioemocional`
+- `dashboard-main.tsx` - Orquestrador que gerencia todos os componentes
+- `use-realtime-updates.ts` - Hook pronto para receber eventos Supabase
 
 **ENTREGÁVEIS**:
-1. `Epic-01-Backend-Base.md` com stories detalhadas
-2. `Epic-02-Frontend-Base.md` com stories detalhadas  
-3. `Epic-03-Components-Integration.md` com stories detalhadas
-4. `Epic-04-Edge-Functions.md` com stories detalhadas
-5. `Epic-05-Refinements.md` com stories detalhadas
-6. `README.md` com visão geral dos épicos e dependências
+1. `Epic-01-Integracao-Backend.md` com stories de integração
+2. `Epic-02-Autenticacao.md` com stories de auth/RBAC
+3. `Epic-03-Dados-Reais.md` com stories de população de dados
+4. `Epic-04-Deploy.md` com stories de deployment
+5. `Integration-Checklist.md` com checklist de validação
+
+**CRONOGRAMA ESTIMADO**: 5-7 dias úteis (vs 14 dias originais)
 
 **RESULTADO ESPERADO**: 
-User stories prontas para serem puxadas pela equipe de desenvolvimento, com critérios claros, dependências mapeadas e priorização definida.
+User stories focadas em INTEGRAÇÃO dos componentes existentes com o backend, sem criar novos componentes ou features. Dashboard totalmente funcional com dados reais ao final.
 
-Comece pelos épicos de maior prioridade e garanta que cada story seja autossuficiente e testável.
+Comece pelo Epic 1 (Backend) que é bloqueador para todos os outros.
